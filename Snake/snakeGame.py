@@ -1,8 +1,5 @@
-import random  #
+import random  
 import curses
-import locale
-
-locale.setlocale(locale.LC_ALL, '')
 s = curses.initscr()  # To initialize the screen
 curses.curs_set(0)  # So that cursor doesn't show up on screen
 sh, sw = s.getmaxyx()  # getting screen height and width
@@ -51,4 +48,4 @@ while True:
     else:
         tail = snake.pop()
         w.addch(int(tail[0]), int(tail[1]), ' ')
-    w.addch(int(snake[0][0]), int(snake[0][1]))
+    w.addch(int(snake[0][0]), int(snake[0][1]),curses.ACS_CKBOARD)
