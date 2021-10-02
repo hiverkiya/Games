@@ -1,6 +1,6 @@
 <%--
 //
-// DefaultWsdlHelpGenerator.aspx: 
+// DefaultWsdlHelpGenerator.aspx:
 //
 // Author:
 //   Lluis Sanchez Gual (lluis@ximian.com)
@@ -65,18 +65,18 @@ void Page_Load(object sender, EventArgs e)
 
 	ServiceDescription desc = descriptions [0];
 	if (schemas.Count == 0) schemas = desc.Types.Schemas;
-	
+
 	Service service = desc.Services[0];
 	WebServiceName = service.Name;
 	if (desc.Bindings.Count == 0)
 		return;
-	
+
 	DefaultBinding = desc.Bindings[0].Name;
 	WebServiceDescription = service.Documentation;
 	if (WebServiceDescription == "" || WebServiceDescription == null)
 		WebServiceDescription = "Description has not been provided";
 	ServiceProtocols = FindServiceProtocols (null);
-	
+
 	CurrentOperationName = Request.QueryString["op"];
 	CurrentOperationBinding = Request.QueryString["bnd"];
 	if (CurrentOperationName != null) BuildOperationInfo ();
@@ -91,7 +91,7 @@ void Page_Load(object sender, EventArgs e)
 
 	BindingsRepeater.DataSource = list;
 	Page.DataBind();
-	
+
 	ProfileViolations = new BasicProfileViolationCollection ();
 	foreach (WsiProfilesElement claims in ((WebServicesSection) WebConfigurationManager.GetSection("system.web/webServices")).ConformanceWarnings)
 		if (claims.Name != WsiProfiles.None)
@@ -102,17 +102,17 @@ void BuildOperationInfo ()
 {
 	InParams = new ArrayList ();
 	OutParams = new ArrayList ();
-	
+
 	Port port = FindPort (CurrentOperationBinding, null);
 	Binding binding = descriptions.GetBinding (port.Binding);
-	
+
 	PortType portType = descriptions.GetPortType (binding.Type);
 	Operation oper = FindOperation (portType, CurrentOperationName);
-	
+
 	OperationDocumentation = oper.Documentation;
 	if (OperationDocumentation == null || OperationDocumentation == "")
 		OperationDocumentation = "No additional remarks";
-	
+
 	foreach (OperationMessage opm in oper.Messages)
 	{
 		if (opm is OperationInput)
@@ -120,7 +120,7 @@ void BuildOperationInfo ()
 		else if (opm is OperationOutput)
 			BuildParameters (OutParams, opm);
 	}
-	
+
 	// Protocols supported by the operation
 	CurrentOperationProtocols = "";
 	WebServiceProtocols testProtocols = 0;
@@ -167,12 +167,12 @@ void BuildParameters (ArrayList list, OperationMessage opm)
 		}
 		XmlSchemaSequence seq = ctype.Particle as XmlSchemaSequence;
 		if (seq == null) return;
-		
+
 		foreach (XmlSchemaObject ob in seq.Items)
 		{
 			Parameter p = new Parameter();
 			p.Description = "No additional remarks";
-			
+
 			if (ob is XmlSchemaElement)
 			{
 				XmlSchemaElement selem = GetRefElement ((XmlSchemaElement)ob);
@@ -237,13 +237,13 @@ ArrayList FindServiceProtocols(string operName)
 		Binding bin = descriptions.GetBinding (port.Binding);
 		if (bin.Extensions.Find (typeof(SoapBinding)) != null)
 			prot = "Soap";
-		else 
+		else
 		{
 			HttpBinding hb = (HttpBinding) bin.Extensions.Find (typeof(HttpBinding));
 			if (hb != null && hb.Verb == "POST") prot = "HttpPost";
 			else if (hb != null && hb.Verb == "GET") prot = "HttpGet";
 		}
-		
+
 		if (prot != null && operName != null)
 		{
 			if (FindOperation (bin, operName) == null)
@@ -292,7 +292,7 @@ Operation FindOperation (PortType portType, string name)
 		else
 			if (oper.Name == name) return oper;
 	}
-		
+
 	return null;
 }
 
@@ -302,10 +302,10 @@ OperationBinding FindOperation (Binding binding, string name)
 		if (oper.Input.Name != null) {
 			if (oper.Input.Name == name) return oper;
 		}
-		else 
+		else
 			if (oper.Name == name) return oper;
 	}
-		
+
 	return null;
 }
 
@@ -357,9 +357,9 @@ string GetQS ()
 }
 
 string GetTestResultUrl ()
-{ 
+{
 	if (!HasFormResult) return "";
-	
+
 	string location = null;
 	ServiceDescription desc = descriptions [0];
 	Service service = desc.Services[0];
@@ -371,25 +371,25 @@ string GetTestResultUrl ()
 				location = sbi.Location;
 		}
 
-	if (location == null) 
+	if (location == null)
 		return "Could not locate web service";
-	
+
 	return location + "/" + CurrentOperationName;
 }
 
 string GenerateOperationMessages (string protocol, bool generateInput)
 {
 	if (!IsOperationSupported (protocol)) return "";
-	
+
 	Port port;
 	if (protocol != "Soap") port = FindPort (null, protocol);
 	else port = FindPort (CurrentOperationBinding, null);
-	
+
 	Binding binding = descriptions.GetBinding (port.Binding);
 	OperationBinding obin = FindOperation (binding, CurrentOperationName);
 	PortType portType = descriptions.GetPortType (binding.Type);
 	Operation oper = FindOperation (portType, CurrentOperationName);
-	
+
 	HtmlSampleGenerator sg = new HtmlSampleGenerator (descriptions, schemas);
 	string txt = sg.GenerateMessage (port, obin, oper, protocol, generateInput);
 	if (protocol == "Soap") txt = WrapText (txt,CodeTextColumns);
@@ -419,11 +419,11 @@ string GetProxyCode ()
 {
 	CodeNamespace codeNamespace = new CodeNamespace();
 	CodeCompileUnit codeUnit = new CodeCompileUnit();
-	
+
 	codeUnit.Namespaces.Add (codeNamespace);
 
 	ServiceDescriptionImporter importer = new ServiceDescriptionImporter();
-	
+
 	foreach (ServiceDescription sd in descriptions)
 		importer.AddServiceDescription(sd, null, null);
 
@@ -437,7 +437,7 @@ string GetProxyCode ()
 	CodeDomProvider provider = GetProvider (langId);
 	ICodeGenerator generator = provider.CreateGenerator();
 	CodeGeneratorOptions options = new CodeGeneratorOptions();
-	
+
 	StringWriter sw = new StringWriter ();
 	generator.GenerateCodeFromCompileUnit(codeUnit, sw, options);
 
@@ -483,12 +483,12 @@ class UTF8StringWriter : StringWriter {
 string GenerateDocument ()
 {
 	UTF8StringWriter sw = new UTF8StringWriter ();
-	
+
 	if (CurrentDocType == "wsdl")
 		descriptions [CurrentDocInd].Write (sw);
 	else if (CurrentDocType == "schema")
 		schemas [CurrentDocInd].Write (sw);
-		
+
 	return Colorize (WrapText (sw.ToString (), CodeTextColumns), "xml");
 }
 
@@ -543,7 +543,7 @@ void WriteTab (string id, string label)
 {
 	if (!firstTab) Response.Write("&nbsp;|&nbsp;");
 	firstTab = false;
-	
+
 	string cname = CurrentTab == id ? "tabLabelOn" : "tabLabelOff";
 	Response.Write ("<a href='" + PageName + "?" + GetPageContext(null) + GetDataContext() + "tab=" + id + "' style='text-decoration:none'>");
 	Response.Write ("<span class='" + cname + "'>" + label + "</span>");
@@ -555,13 +555,13 @@ string GetTabContext (string pag, string tab)
 	if (tab == null) tab = CurrentTab;
 	if (pag == null) pag = CurrentPage;
 	if (pag != CurrentPage) tab = "main";
-	return "page=" + pag + "&tab=" + tab + "&"; 
+	return "page=" + pag + "&tab=" + tab + "&";
 }
 
 string GetPageContext (string pag)
 {
 	if (pag == null) pag = CurrentPage;
-	return "page=" + pag + "&"; 
+	return "page=" + pag + "&";
 }
 
 class Tab
@@ -617,17 +617,17 @@ string ColorizeXml (string text)
 	text = text.Replace (" ", "&nbsp;");
 	Regex re = new Regex ("\r\n|\r|\n");
 	text = re.Replace (text, "_br_");
-	
+
 	re = new Regex ("<\\s*(\\/?)\\s*([\\s\\S]*?)\\s*(\\/?)\\s*>");
 	text = re.Replace (text,"{blue:&lt;$1}{maroon:$2}{blue:$3&gt;}");
-	
+
 	re = new Regex ("\\{(\\w*):([\\s\\S]*?)\\}");
 	text = re.Replace (text,"<span style='color:$1'>$2</span>");
 
 	re = new Regex ("\"(.*?)\"");
 	text = re.Replace (text,"\"<span style='color:purple'>$1</span>\"");
 
-	
+
 	text = text.Replace ("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
 	text = text.Replace ("_br_", "<br>");
 	return text;
@@ -645,29 +645,29 @@ string ColorizeCs (string text)
 
 	re = new Regex ("//(((.(?!\"</span>))|\"(((?!\").)*)\"</span>)*)(\r|\n|\r\n)");
 	text = re.Replace (text,"<span style='color:green'>//$1</span><br/>");
-	
+
 	re = new Regex (keywords_cs);
 	text = re.Replace (text,"<span style='color:blue'>$1</span>");
-	
+
 	text = text.Replace ("\t","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
 	text = text.Replace ("\n","<br/>");
-	
+
 	return text;
 }
 
 string ColorizeVb (string text)
 {
 	text = text.Replace (" ", "&nbsp;");
-	
+
 /*	Regex re = new Regex ("\"((((?!\").)|\\\")*?)\"");
 	text = re.Replace (text,"<span style='color:purple'>\"$1\"</span>");
 
 	re = new Regex ("'(((.(?!\"\\<\\/span\\>))|\"(((?!\").)*)\"\\<\\/span\\>)*)(\r|\n|\r\n)");
 	text = re.Replace (text,"<span style='color:green'>//$1</span><br/>");
-	
+
 	re = new Regex (keywords_vb);
 	text = re.Replace (text,"<span style='color:blue'>$1</span>");
-*/	
+*/
 	text = text.Replace ("\t","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
 	text = text.Replace ("\n","<br/>");
 	return text;
@@ -692,7 +692,7 @@ string GetOptionSel (string v1, string v2)
 string WrapText (string text, int maxChars)
 {
 	text =  text.Replace(" />","/>");
-	
+
 	string linspace = null;
 	int lincount = 0;
 	int breakpos = 0;
@@ -704,7 +704,7 @@ string WrapText (string text, int maxChars)
 	for (int n=0; n<text.Length; n++)
 	{
 		char c = text [n];
-		
+
 		if (c=='\r' || c=='\n' || n==text.Length-1)
 		{
 			sb.Append (linspace + sublineIndent + text.Substring (linstart, n-linstart+1));
@@ -716,12 +716,12 @@ string WrapText (string text, int maxChars)
 			lastc = c;
 			continue;
 		}
-		
+
 		if (lastc==',' || lastc=='(')
 		{
 			if (!inquotes) breakpos = n;
 		}
-		
+
 		if (lincount > maxChars && breakpos >= linstart)
 		{
 			if (linspace != null)
@@ -732,7 +732,7 @@ string WrapText (string text, int maxChars)
 			lincount = linspace.Length + sublineIndent.Length + (n-breakpos);
 			linstart = breakpos;
 		}
-		
+
 		if (c==' ' || c=='\t')
 		{
 			if (!inquotes)
@@ -742,7 +742,7 @@ string WrapText (string text, int maxChars)
 		{
 			inquotes = !inquotes;
 		}
-		else 
+		else
 			if (linspace == null) {
 				linspace = text.Substring (linstart, n-linstart);
 				linstart = n;
@@ -771,7 +771,7 @@ public class HtmlSampleGenerator: SampleGenerator
 	: base (services, schemas)
 	{
 	}
-		
+
 	protected override string GetLiteral (string s)
 	{
 		return "@placeholder!" + s + "!placeholder@";
@@ -787,14 +787,14 @@ public class HtmlSampleGenerator: SampleGenerator
 		ArrayList queue;
 		SoapBindingUse currentUse;
 		XmlDocument document = new XmlDocument ();
-		
+
 		static readonly XmlQualifiedName anyType = new XmlQualifiedName ("anyType",XmlSchema.Namespace);
 		static readonly XmlQualifiedName arrayType = new XmlQualifiedName ("Array","http://schemas.xmlsoap.org/soap/encoding/");
 		static readonly XmlQualifiedName arrayTypeRefName = new XmlQualifiedName ("arrayType","http://schemas.xmlsoap.org/soap/encoding/");
 		const string SoapEnvelopeNamespace = "http://schemas.xmlsoap.org/soap/envelope/";
 		const string WsdlNamespace = "http://schemas.xmlsoap.org/wsdl/";
 		const string SoapEncodingNamespace = "http://schemas.xmlsoap.org/soap/encoding/";
-		
+
 		class EncodedType
 		{
 			public EncodedType (string ns, XmlSchemaElement elem) { Namespace = ns; Element = elem; }
@@ -808,7 +808,7 @@ public class HtmlSampleGenerator: SampleGenerator
 			this.schemas = schemas;
 			queue = new ArrayList ();
 		}
-		
+
 		public string GenerateMessage (Port port, OperationBinding obin, Operation oper, string protocol, bool generateInput)
 		{
 			OperationMessage msg = null;
@@ -818,7 +818,7 @@ public class HtmlSampleGenerator: SampleGenerator
 				else if (opm is OperationOutput && !generateInput) msg = opm;
 			}
 			if (msg == null) return null;
-			
+
 			switch (protocol) {
 				case "Soap": return GenerateHttpSoapMessage (port, obin, oper, msg);
 				case "HttpGet": return GenerateHttpGetMessage (port, obin, oper, msg);
@@ -826,11 +826,11 @@ public class HtmlSampleGenerator: SampleGenerator
 			}
 			return "Unknown protocol";
 		}
-		
+
 		public string GenerateHttpSoapMessage (Port port, OperationBinding obin, Operation oper, OperationMessage msg)
 		{
 			string req = "";
-			
+
 			if (msg is OperationInput)
 			{
 				SoapAddressBinding sab = port.Extensions.Find (typeof(SoapAddressBinding)) as SoapAddressBinding;
@@ -847,15 +847,15 @@ public class HtmlSampleGenerator: SampleGenerator
 				req += "Content-Type: text/xml; charset=utf-8\n";
 				req += "Content-Length: " + GetLiteral ("string") + "\n\n";
 			}
-			
+
 			req += GenerateSoapMessage (obin, oper, msg);
 			return req;
 		}
-		
+
 		public string GenerateHttpGetMessage (Port port, OperationBinding obin, Operation oper, OperationMessage msg)
 		{
 			string req = "";
-			
+
 			if (msg is OperationInput)
 			{
 				HttpAddressBinding sab = port.Extensions.Find (typeof(HttpAddressBinding)) as HttpAddressBinding;
@@ -869,17 +869,17 @@ public class HtmlSampleGenerator: SampleGenerator
 				req += "HTTP/1.0 200 OK\n";
 				req += "Content-Type: text/xml; charset=utf-8\n";
 				req += "Content-Length: " + GetLiteral ("string") + "\n\n";
-			
+
 				MimeXmlBinding mxb = (MimeXmlBinding) obin.Output.Extensions.Find (typeof(MimeXmlBinding)) as MimeXmlBinding;
 				if (mxb == null) return req;
-				
+
 				Message message = descriptions.GetMessage (msg.Message);
 				XmlQualifiedName ename = null;
 				foreach (MessagePart part in message.Parts)
 					if (part.Name == mxb.Part) ename = part.Element;
-					
+
 				if (ename == null) return req + GetLiteral("string");
-				
+
 				StringWriter sw = new StringWriter ();
 				XmlTextWriter xtw = new XmlTextWriter (sw);
 				xtw.Formatting = Formatting.Indented;
@@ -888,14 +888,14 @@ public class HtmlSampleGenerator: SampleGenerator
 				xtw.Close ();
 				req += sw.ToString ();
 			}
-			
+
 			return req;
 		}
-		
+
 		public string GenerateHttpPostMessage (Port port, OperationBinding obin, Operation oper, OperationMessage msg)
 		{
 			string req = "";
-			
+
 			if (msg is OperationInput)
 			{
 				HttpAddressBinding sab = port.Extensions.Find (typeof(HttpAddressBinding)) as HttpAddressBinding;
@@ -908,10 +908,10 @@ public class HtmlSampleGenerator: SampleGenerator
 				req += BuildQueryString (msg);
 			}
 			else return GenerateHttpGetMessage (port, obin, oper, msg);
-			
+
 			return req;
 		}
-		
+
 		string BuildQueryString (OperationMessage opm)
 		{
 			string s = "";
@@ -923,62 +923,62 @@ public class HtmlSampleGenerator: SampleGenerator
 			}
 			return s;
 		}
-		
+
 		public string GenerateSoapMessage (OperationBinding obin, Operation oper, OperationMessage msg)
 		{
 			SoapOperationBinding sob = obin.Extensions.Find (typeof(SoapOperationBinding)) as SoapOperationBinding;
 			SoapBindingStyle style = (sob != null) ? sob.Style : SoapBindingStyle.Document;
-			
+
 			MessageBinding msgbin = (msg is OperationInput) ? (MessageBinding) obin.Input : (MessageBinding)obin.Output;
 			SoapBodyBinding sbb = msgbin.Extensions.Find (typeof(SoapBodyBinding)) as SoapBodyBinding;
 			SoapBindingUse bodyUse = (sbb != null) ? sbb.Use : SoapBindingUse.Literal;
-			
+
 			StringWriter sw = new StringWriter ();
 			XmlTextWriter xtw = new XmlTextWriter (sw);
 			xtw.Formatting = Formatting.Indented;
-			
+
 			xtw.WriteStartDocument ();
 			xtw.WriteStartElement ("soap", "Envelope", SoapEnvelopeNamespace);
 			xtw.WriteAttributeString ("xmlns", "xsi", null, XmlSchema.InstanceNamespace);
 			xtw.WriteAttributeString ("xmlns", "xsd", null, XmlSchema.Namespace);
-			
-			if (bodyUse == SoapBindingUse.Encoded) 
+
+			if (bodyUse == SoapBindingUse.Encoded)
 			{
 				xtw.WriteAttributeString ("xmlns", "soapenc", null, SoapEncodingNamespace);
 				xtw.WriteAttributeString ("xmlns", "tns", null, msg.Message.Namespace);
 			}
 
 			// Serialize headers
-			
+
 			bool writtenHeader = false;
 			foreach (object ob in msgbin.Extensions)
 			{
 				SoapHeaderBinding hb = ob as SoapHeaderBinding;
 				if (hb == null) continue;
-				
+
 				if (!writtenHeader) {
 					xtw.WriteStartElement ("soap", "Header", SoapEnvelopeNamespace);
 					writtenHeader = true;
 				}
-				
+
 				WriteHeader (xtw, hb);
 			}
-			
+
 			if (writtenHeader)
 				xtw.WriteEndElement ();
 
 			// Serialize body
 			xtw.WriteStartElement ("soap", "Body", SoapEnvelopeNamespace);
-			
+
 			currentUse = bodyUse;
 			WriteBody (xtw, oper, msg, sbb, style);
-			
+
 			xtw.WriteEndElement ();
 			xtw.WriteEndElement ();
 			xtw.Close ();
 			return sw.ToString ();
 		}
-		
+
 		void WriteHeader (XmlTextWriter xtw, SoapHeaderBinding header)
 		{
 			Message msg = descriptions.GetMessage (header.Message);
@@ -987,13 +987,13 @@ public class HtmlSampleGenerator: SampleGenerator
 			if (part == null) throw new InvalidOperationException ("Message part " + header.Part + " not found in message " + header.Message);
 
 			currentUse = header.Use;
-			
+
 			if (currentUse == SoapBindingUse.Literal)
 				WriteRootElementSample (xtw, part.Element);
 			else
 				WriteTypeSample (xtw, part.Type);
 		}
-		
+
 		void WriteBody (XmlTextWriter xtw, Operation oper, OperationMessage opm, SoapBodyBinding sbb, SoapBindingStyle style)
 		{
 			Message msg = descriptions.GetMessage (opm.Message);
@@ -1010,12 +1010,12 @@ public class HtmlSampleGenerator: SampleGenerator
 				string elemName = oper.Name;
 				string ns = "";
 				if (opm is OperationOutput) elemName += "Response";
-				
+
 				if (style == SoapBindingStyle.Rpc) {
 					xtw.WriteStartElement (elemName, sbb.Namespace);
 					ns = sbb.Namespace;
 				}
-					
+
 				foreach (MessagePart part in msg.Parts)
 				{
 					if (part.Element == XmlQualifiedName.Empty)
@@ -1028,13 +1028,13 @@ public class HtmlSampleGenerator: SampleGenerator
 					else
 						WriteRootElementSample (xtw, part.Element);
 				}
-				
+
 				if (style == SoapBindingStyle.Rpc)
 					xtw.WriteEndElement ();
 			}
 			WriteQueuedTypeSamples (xtw);
 		}
-		
+
 		void WriteRootElementSample (XmlTextWriter xtw, XmlQualifiedName qname)
 		{
 			XmlSchemaElement elem = (XmlSchemaElement) schemas.Find (qname, typeof(XmlSchemaElement));
@@ -1046,7 +1046,7 @@ public class HtmlSampleGenerator: SampleGenerator
 		{
 			bool sharedAnnType = false;
 			XmlQualifiedName root;
-			
+
 			if (!elem.RefName.IsEmpty) {
 				XmlSchemaElement refElem = FindRefElement (elem);
 				if (refElem == null) throw new InvalidOperationException ("Global element not found: " + elem.RefName);
@@ -1056,16 +1056,16 @@ public class HtmlSampleGenerator: SampleGenerator
 			}
 			else
 				root = new XmlQualifiedName (elem.Name, ns);
-			
+
 			if (!elem.SchemaTypeName.IsEmpty)
 			{
 				XmlSchemaComplexType st = FindComplexTyype (elem.SchemaTypeName);
-				if (st != null) 
+				if (st != null)
 					WriteComplexTypeSample (xtw, st, root);
 				else
 				{
 					xtw.WriteStartElement (root.Name, root.Namespace);
-					if (currentUse == SoapBindingUse.Encoded) 
+					if (currentUse == SoapBindingUse.Encoded)
 						xtw.WriteAttributeString ("type", XmlSchema.InstanceNamespace, GetQualifiedNameString (xtw, elem.SchemaTypeName));
 					xtw.WriteString (GetLiteral (FindBuiltInType (elem.SchemaTypeName)));
 					xtw.WriteEndElement ();
@@ -1079,7 +1079,7 @@ public class HtmlSampleGenerator: SampleGenerator
 			else
 				WriteComplexTypeSample (xtw, (XmlSchemaComplexType) elem.SchemaType, root);
 		}
-		
+
 		void WriteTypeSample (XmlTextWriter xtw, XmlQualifiedName qname)
 		{
 			XmlSchemaComplexType ctype = FindComplexTyype (qname);
@@ -1087,28 +1087,28 @@ public class HtmlSampleGenerator: SampleGenerator
 				WriteComplexTypeSample (xtw, ctype, qname);
 				return;
 			}
-			
+
 			XmlSchemaSimpleType stype = (XmlSchemaSimpleType) schemas.Find (qname, typeof(XmlSchemaSimpleType));
 			if (stype != null) {
 				WriteSimpleTypeSample (xtw, stype);
 				return;
 			}
-			
+
 			xtw.WriteString (GetLiteral (FindBuiltInType (qname)));
 			throw new InvalidOperationException ("Type not found: " + qname);
 		}
-		
+
 		void WriteComplexTypeSample (XmlTextWriter xtw, XmlSchemaComplexType stype, XmlQualifiedName rootName)
 		{
 			WriteComplexTypeSample (xtw, stype, rootName, -1);
 		}
-		
+
 		void WriteComplexTypeSample (XmlTextWriter xtw, XmlSchemaComplexType stype, XmlQualifiedName rootName, int id)
 		{
 			string ns = rootName.Namespace;
-			
+
 			if (rootName.Name.IndexOf ("[]") != -1) rootName = arrayType;
-			
+
 			if (currentUse == SoapBindingUse.Encoded) {
 				string pref = xtw.LookupPrefix (rootName.Namespace);
 				if (pref == null) pref = "q1";
@@ -1117,20 +1117,20 @@ public class HtmlSampleGenerator: SampleGenerator
 			}
 			else
 				xtw.WriteStartElement (rootName.Name, rootName.Namespace);
-			
+
 			if (id != -1)
 			{
 				xtw.WriteAttributeString ("id", "id" + id);
 				if (rootName != arrayType)
 					xtw.WriteAttributeString ("type", XmlSchema.InstanceNamespace, GetQualifiedNameString (xtw, rootName));
 			}
-			
+
 			WriteComplexTypeAttributes (xtw, stype);
 			WriteComplexTypeElements (xtw, ns, stype);
-			
+
 			xtw.WriteEndElement ();
 		}
-		
+
 		void WriteComplexTypeAttributes (XmlTextWriter xtw, XmlSchemaComplexType stype)
 		{
 			WriteAttributes (xtw, stype.Attributes, stype.AnyAttribute);
@@ -1169,18 +1169,18 @@ public class HtmlSampleGenerator: SampleGenerator
 					string ns;
 					XmlSchemaAttribute attr = (XmlSchemaAttribute)at;
 					XmlSchemaAttribute refAttr = attr;
-					
+
 					// refAttr.Form; TODO
-					
+
 					if (!attr.RefName.IsEmpty) {
 						refAttr = FindRefAttribute (attr.RefName);
 						if (refAttr == null) throw new InvalidOperationException ("Global attribute not found: " + attr.RefName);
 					}
-					
+
 					string val;
 					if (!refAttr.SchemaTypeName.IsEmpty) val = FindBuiltInType (refAttr.SchemaTypeName);
 					else val = FindBuiltInType ((XmlSchemaSimpleType) refAttr.SchemaType);
-					
+
 					xtw.WriteAttributeString (refAttr.Name, val);
 				}
 				else if (at is XmlSchemaAttributeGroupRef)
@@ -1190,23 +1190,23 @@ public class HtmlSampleGenerator: SampleGenerator
 					WriteAttributes (xtw, grp.Attributes, grp.AnyAttribute);
 				}
 			}
-			
+
 			if (anyat != null)
 				xtw.WriteAttributeString ("custom-attribute","value");
 		}
-		
+
 		void WriteParticleComplexContent (XmlTextWriter xtw, string ns, XmlSchemaParticle particle)
 		{
 			WriteParticleContent (xtw, ns, particle, false);
 		}
-		
+
 		void WriteParticleContent (XmlTextWriter xtw, string ns, XmlSchemaParticle particle, bool multiValue)
 		{
 			if (particle is XmlSchemaGroupRef)
 				particle = GetRefGroupParticle ((XmlSchemaGroupRef)particle);
 
 			if (particle.MaxOccurs > 1) multiValue = true;
-			
+
 			if (particle is XmlSchemaSequence) {
 				WriteSequenceContent (xtw, ns, ((XmlSchemaSequence)particle).Items, multiValue);
 			}
@@ -1226,12 +1226,12 @@ public class HtmlSampleGenerator: SampleGenerator
 			foreach (XmlSchemaObject item in items)
 				WriteContentItem (xtw, ns, item, multiValue);
 		}
-		
+
 		void WriteContentItem (XmlTextWriter xtw, string ns, XmlSchemaObject item, bool multiValue)
 		{
 			if (item is XmlSchemaGroupRef)
 				item = GetRefGroupParticle ((XmlSchemaGroupRef)item);
-					
+
 			if (item is XmlSchemaElement)
 			{
 				XmlSchemaElement elem = (XmlSchemaElement) item;
@@ -1256,7 +1256,7 @@ public class HtmlSampleGenerator: SampleGenerator
 				WriteParticleContent (xtw, ns, (XmlSchemaParticle)item, multiValue);
 			}
 		}
-		
+
 		void WriteChoiceContent (XmlTextWriter xtw, string ns, XmlSchemaChoice choice, bool multiValue)
 		{
 			foreach (XmlSchemaObject item in choice.Items)
@@ -1268,7 +1268,7 @@ public class HtmlSampleGenerator: SampleGenerator
 			XmlSchemaSimpleContentExtension ext = content.Content as XmlSchemaSimpleContentExtension;
 			if (ext != null)
 				WriteAttributes (xtw, ext.Attributes, ext.AnyAttribute);
-				
+
 			XmlQualifiedName qname = GetContentBaseType (content.Content);
 			xtw.WriteString (GetLiteral (FindBuiltInType (qname)));
 		}
@@ -1285,7 +1285,7 @@ public class HtmlSampleGenerator: SampleGenerator
 				if (sc == null) throw new InvalidOperationException ("Invalid schema");
 				return FindBuiltInType (GetContentBaseType (sc.Content));
 			}
-			
+
 			XmlSchemaSimpleType st = (XmlSchemaSimpleType) schemas.Find (qname, typeof(XmlSchemaSimpleType));
 			if (st != null)
 				return FindBuiltInType (st);
@@ -1323,7 +1323,7 @@ public class HtmlSampleGenerator: SampleGenerator
 			else
 				return "string";
 		}
-		
+
 
 		XmlQualifiedName GetContentBaseType (XmlSchemaObject ob)
 		{
@@ -1353,62 +1353,62 @@ public class HtmlSampleGenerator: SampleGenerator
 					XmlSchemaElement elem = new XmlSchemaElement ();
 					elem.Name = "Item";
 					elem.SchemaTypeName = qname;
-					
+
 					xtw.WriteAttributeString ("arrayType", SoapEncodingNamespace, qname.Name + "[2]");
 					WriteContentItem (xtw, ns, elem, true);
 					return;
 				}
 			}
-			
+
 			// Add base map members to this map
 			XmlSchemaComplexType ctype = FindComplexTyype (qname);
 			WriteComplexTypeAttributes (xtw, ctype);
-			
+
 			if (ext != null) {
 				// Add the members of this map
 				WriteAttributes (xtw, ext.Attributes, ext.AnyAttribute);
 				if (ext.Particle != null)
 					WriteParticleComplexContent (xtw, ns, ext.Particle);
 			}
-			
+
 			WriteComplexTypeElements (xtw, ns, ctype);
 		}
-		
+
 		void ParseArrayType (XmlSchemaComplexContentRestriction rest, out XmlQualifiedName qtype)
 		{
 			XmlSchemaAttribute arrayTypeAt = FindArrayAttribute (rest.Attributes);
 			XmlAttribute[] uatts = arrayTypeAt.UnhandledAttributes;
 			if (uatts == null || uatts.Length == 0) throw new InvalidOperationException ("arrayType attribute not specified in array declaration");
-			
+
 			XmlAttribute xat = null;
 			foreach (XmlAttribute at in uatts)
 				if (at.LocalName == "arrayType" && at.NamespaceURI == WsdlNamespace)
 					{ xat = at; break; }
-			
-			if (xat == null) 
+
+			if (xat == null)
 				throw new InvalidOperationException ("arrayType attribute not specified in array declaration");
-			
+
 			string arrayType = xat.Value;
 			string type, ns;
 			int i = arrayType.LastIndexOf (":");
 			if (i == -1) ns = "";
 			else ns = arrayType.Substring (0,i);
-			
+
 			int j = arrayType.IndexOf ("[", i+1);
 			if (j == -1) throw new InvalidOperationException ("Cannot parse WSDL array type: " + arrayType);
 			type = arrayType.Substring (i+1);
 			type = type.Substring (0, type.Length-2);
-			
+
 			qtype = new XmlQualifiedName (type, ns);
 		}
-		
+
 		XmlSchemaAttribute FindArrayAttribute (XmlSchemaObjectCollection atts)
 		{
 			foreach (object ob in atts)
 			{
 				XmlSchemaAttribute att = ob as XmlSchemaAttribute;
 				if (att != null && att.RefName == arrayTypeRefName) return att;
-				
+
 				XmlSchemaAttributeGroupRef gref = ob as XmlSchemaAttributeGroupRef;
 				if (gref != null)
 				{
@@ -1419,12 +1419,12 @@ public class HtmlSampleGenerator: SampleGenerator
 			}
 			return null;
 		}
-		
+
 		void WriteSimpleTypeSample (XmlTextWriter xtw, XmlSchemaSimpleType stype)
 		{
 			xtw.WriteString (GetLiteral (FindBuiltInType (stype)));
 		}
-		
+
 		XmlSchemaParticle GetRefGroupParticle (XmlSchemaGroupRef refGroup)
 		{
 			XmlSchemaGroup grp = (XmlSchemaGroup) schemas.Find (refGroup.RefName, typeof (XmlSchemaGroup));
@@ -1443,7 +1443,7 @@ public class HtmlSampleGenerator: SampleGenerator
 			}
 			return (XmlSchemaElement) schemas.Find (elem.RefName, typeof(XmlSchemaElement));
 		}
-		
+
 		XmlSchemaAttribute FindRefAttribute (XmlQualifiedName refName)
 		{
 			if (refName.Namespace == XmlSchema.Namespace)
@@ -1455,7 +1455,7 @@ public class HtmlSampleGenerator: SampleGenerator
 			}
 			return (XmlSchemaAttribute) schemas.Find (refName, typeof(XmlSchemaAttribute));
 		}
-		
+
 		void WriteRefTypeSample (XmlTextWriter xtw, string ns, XmlSchemaElement elem)
 		{
 			if (elem.SchemaTypeName.Namespace == XmlSchema.Namespace || schemas.Find (elem.SchemaTypeName, typeof(XmlSchemaSimpleType)) != null)
@@ -1468,7 +1468,7 @@ public class HtmlSampleGenerator: SampleGenerator
 				queue.Add (new EncodedType (ns, elem));
 			}
 		}
-		
+
 		void WriteQueuedTypeSamples (XmlTextWriter xtw)
 		{
 			for (int n=0; n<queue.Count; n++)
@@ -1478,40 +1478,40 @@ public class HtmlSampleGenerator: SampleGenerator
 				WriteComplexTypeSample (xtw, st, ec.Element.SchemaTypeName, n+1);
 			}
 		}
-		
+
 		XmlSchemaComplexType FindComplexTyype (XmlQualifiedName qname)
 		{
 			if (qname.Name.IndexOf ("[]") != -1)
 			{
 				XmlSchemaComplexType stype = new XmlSchemaComplexType ();
 				stype.ContentModel = new XmlSchemaComplexContent ();
-				
+
 				XmlSchemaComplexContentRestriction res = new XmlSchemaComplexContentRestriction ();
 				stype.ContentModel.Content = res;
 				res.BaseTypeName = arrayType;
-				
+
 				XmlSchemaAttribute att = new XmlSchemaAttribute ();
 				att.RefName = arrayTypeRefName;
 				res.Attributes.Add (att);
-				
+
 				XmlAttribute xat = document.CreateAttribute ("arrayType", WsdlNamespace);
 				xat.Value = qname.Namespace + ":" + qname.Name;
 				att.UnhandledAttributes = new XmlAttribute[] {xat};
 				return stype;
 			}
-				
+
 			return (XmlSchemaComplexType) schemas.Find (qname, typeof(XmlSchemaComplexType));
 		}
-		
+
 		string GetQualifiedNameString (XmlTextWriter xtw, XmlQualifiedName qname)
 		{
 			string pref = xtw.LookupPrefix (qname.Namespace);
 			if (pref != null) return pref + ":" + qname.Name;
-			
+
 			xtw.WriteAttributeString ("xmlns", "q1", null, qname.Namespace);
 			return "q1:" + qname.Name;
 		}
-				
+
 		protected virtual string GetLiteral (string s)
 		{
 			return s;
@@ -1570,13 +1570,13 @@ public class HtmlSampleGenerator: SampleGenerator
 		A:active { color: black; }
 		A:hover { color: blue }
     </style>
-	
+
 <script language="javascript" type="text/javascript">
 var req;
 function getXML (command, url, qs) {
 	if (url == "" || url.substring (0, 4) != "http")
 		return;
-	
+
 	var post_data = null;
 	req = getReq ();
 	req.onreadystatechange = stateChange;
@@ -1585,10 +1585,10 @@ function getXML (command, url, qs) {
 	} else {
 		post_data = qs;
 	}
-	req.open (command, url,  true); 
+	req.open (command, url,  true);
 	if (command == "POST")
 		req.setRequestHeader ("Content-Type", "application/x-www-form-urlencoded");
-	req.send (post_data); 
+	req.send (post_data);
 }
 
 function stateChange () {
@@ -1602,22 +1602,22 @@ function stateChange () {
 			if (req.responseText != "")
 				ht = ht + "\n<div class='code-xml'>" + formatXml (req.responseText) + "</div>";
 			node.innerHTML = ht;
-					
+
 		}
 	}
 }
 
 function formatXml (text)
-{	
+{
 	var re = / /g;
 	text = text.replace (re, "&nbsp;");
 
 	re = /\t/g;
 	text = text.replace (re, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-	
+
 	re = /\<\s*(\/?)\s*(.*?)\s*(\/?)\s*\>/g;
 	text = text.replace (re,"{blue:&lt;$1}{maroon:$2}{blue:$3&gt;}");
-	
+
 	re = /{(\w*):(.*?)}/g;
 	text = text.replace (re,"<span style='color:$1'>$2</span>");
 
@@ -1626,7 +1626,7 @@ function formatXml (text)
 
 	re = /\r\n|\r|\n/g;
 	text = text.replace (re, "<br/>");
-	
+
 	return text;
 }
 
@@ -1720,7 +1720,7 @@ This service does not contain any public web method.
 	<br><br>
 	<% WriteTabs (); %>
 	<br><br><br>
-	
+
 	<% if (CurrentTab == "main") { %>
 		<span class="label">Input Parameters</span>
 		<div class="smallSeparator"></div>
@@ -1739,7 +1739,7 @@ This service does not contain any public web method.
 			</table>
 		<% } %>
 		<br>
-		
+
 		<% if (OutParams.Count > 0) { %>
 		<span class="label">Output Parameters</span>
 			<div class="smallSeparator"></div>
@@ -1755,7 +1755,7 @@ This service does not contain any public web method.
 			</table>
 		<br>
 		<% } %>
-		
+
 		<span class="label">Remarks</span>
 		<div class="smallSeparator"></div>
 		<%=OperationDocumentation%>
@@ -1765,13 +1765,13 @@ This service does not contain any public web method.
 		Format: <%=CurrentOperationFormat%>
 		<br>Supported protocols: <%=CurrentOperationProtocols%>
 	<% } %>
-	
+
 <!--
 	**********************************************************
 	Operation description - Test form
 -->
 
-	<% if (CurrentTab == "test") { 
+	<% if (CurrentTab == "test") {
 		if (CurrentOperationSupportsTest) {%>
 			Enter values for the parameters and click the 'Invoke' button to test this method:<br><br>
 			<form action="<%=PageName%>" method="GET">
@@ -1804,17 +1804,17 @@ This service does not contain any public web method.
 		The test form is not available for this operation because it has parameters with a complex structure.
 		<% } %>
 	<% } %>
-	
+
 <!--
 	**********************************************************
 	Operation description - Message Layout
 -->
 
 	<% if (CurrentTab == "msg") { %>
-		
+
 		The following are sample SOAP requests and responses for each protocol supported by this method:
 			<br/><br/>
-		
+
 		<% if (IsOperationSupported ("Soap")) { %>
 			<span class="label">Soap</span>
 			<br/><br/>
@@ -1839,7 +1839,7 @@ This service does not contain any public web method.
 			<div class="codePanel"><div class="code-xml"><%=GenerateOperationMessages ("HttpPost", false)%></div></div>
 			<br/>
 		<% } %>
-		
+
 	<% } %>
 <%} else if (CurrentPage == "proxy") {%>
 <!--
@@ -1847,7 +1847,7 @@ This service does not contain any public web method.
 	Client Proxy
 -->
 	<form action="<%=PageName%>" name="langForm" method="GET">
-		Select the language for which you want to generate a proxy 
+		Select the language for which you want to generate a proxy
 		<input type="hidden" name="page" value="<%=CurrentPage%>">&nbsp;
 		<SELECT name="lang" onchange="langForm.submit()">
 			<%=GetOptionSel("cs",CurrentLanguage)%>C#</option>
@@ -1869,16 +1869,16 @@ This service does not contain any public web method.
 -->
 	<% if (descriptions.Count > 1 || schemas.Count > 1) {%>
 	The description of this web service is composed by several documents. Click on the document you want to see:
-	
+
 	<ul>
-	<% 
+	<%
 		for (int n=0; n<descriptions.Count; n++)
 			Response.Write ("<li><a href='" + PageName + "?" + GetPageContext(null) + "doctype=wsdl&docind=" + n + "'>WSDL document " + descriptions[n].TargetNamespace + "</a></li>");
 		for (int n=0; n<schemas.Count; n++)
 			Response.Write ("<li><a href='" + PageName + "?" + GetPageContext(null) + "doctype=schema&docind=" + n + "'>Xml Schema " + schemas[n].TargetNamespace + "</a></li>");
 	%>
 	</ul>
-	
+
 	<%} else {%>
 	<%}%>
 	<br>
